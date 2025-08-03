@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Purchase Order Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .date-range {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .date-input {
+            padding: 6px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .search-box {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 320px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            padding: 24px;
+            background: white;
+            margin: 0 24px 24px 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-card {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #1f2937;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .view-toggle {
+            background: white;
+            margin: 0 24px 24px 24px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-tabs {
+            display: flex;
+            gap: 2px;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 8px;
+            width: fit-content;
+        }
+
+        .toggle-tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.2s;
+        }
+
+        .toggle-tab.active {
+            background: white;
+            color: #1f2937;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table {
+            background: white;
+            margin: 0 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        th {
+            background: #f9fafb;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .account-name {
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .customer-location {
+            color: #4b5563;
+            font-weight: 500;
+        }
+
+        .warehouse-name {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .sku-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sku-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .sku-code {
+            font-size: 12px;
+            color: #9ca3af;
+            font-family: monospace;
+        }
+
+        .quantity-badge, .amount-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .ordered { background: #fef3c7; color: #92400e; }
+        .fulfilled { background: #dbeafe; color: #1e40af; }
+        .delivered { background: #d1fae5; color: #065f46; }
+
+        .amount-cell {
+            font-weight: 600;
+            color: #059669;
+            font-family: monospace;
+        }
+
+        .tat-days {
+            font-weight: 500;
+            color: #4b5563;
+        }
+
+        .success-rate {
+            font-weight: 600;
+        }
+
+        .success-high { color: #059669; }
+        .success-medium { color: #d97706; }
+        .success-low { color: #dc2626; }
+
+        .view-content {
+            display: none;
+        }
+
+        .view-content.active {
+            display: block;
+        }
+
+        .summary-row {
+            background: #f8fafc !important;
+            font-weight: 600;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .unit-price {
+            font-size: 12px;
+            color: #6b7280;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Unified Purchase Order Dashboard</h1>
+        <div class="header-controls">
+            <div class="date-range">
+                <span>Date Range:</span>
+                <input type="date" class="date-input" value="2025-01-01">
+                <span>to</span>
+                <input type="date" class="date-input" value="2025-08-06">
+            </div>
+            <button class="btn btn-secondary">Print Report</button>
+            <button class="btn btn-primary">Export CSV</button>
+            <input type="text" class="search-box" placeholder="Search by Account, Location, Warehouse, or SKU...">
+        </div>
+    </div>
+
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value">2,485</div>
+            <div class="metric-label">Total SKU Orders</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">₹3.2M</div>
+            <div class="metric-label">Total Order Value</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">2,298</div>
+            <div class="metric-label">Total Fulfilled</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">3.6 days</div>
+            <div class="metric-label">Average TAT</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">89.2%</div>
+            <div class="metric-label">Overall Success Rate</div>
+        </div>
+    </div>
+
+    <div class="view-toggle">
+        <div class="toggle-tabs">
+            <button class="toggle-tab active" data-view="quantity">Quantity View</button>
+            <button class="toggle-tab" data-view="amount">Amount View</button>
+        </div>
+    </div>
+
+    <div id="quantity" class="view-content active">
+        <div class="data-table">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Customer Location</th>
+                            <th>Warehouse</th>
+                            <th>SKU Details</th>
+                            <th>Ordered Qty</th>
+                            <th>Fulfilled Qty</th>
+                            <th>Delivered Qty</th>
+                            <th>Unit Price</th>
+                            <th>Avg TAT</th>
+                            <th>Success Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="account-name">Walmart</td>
+                            <td class="customer-location">Walmart Jalandhar</td>
+                            <td class="warehouse-name">Ashish Marketing</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Cadbury Dairy Milk 100g</span>
+                                    <span class="sku-code">SKU-CDM-100</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">30</span></td>
+                            <td><span class="quantity-badge fulfilled">27</span></td>
+                            <td><span class="quantity-badge delivered">26</span></td>
+                            <td class="amount-cell">₹45</td>
+                            <td class="tat-days">2.5 days</td>
+                            <td class="success-rate success-high">86.7%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">BigBasket</td>
+                            <td class="customer-location">BigBasket Pune Central</td>
+                            <td class="warehouse-name">Sakshi Agency - Pune</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Britannia Good Day Cookies</span>
+                                    <span class="sku-code">SKU-BGD-200</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">45</span></td>
+                            <td><span class="quantity-badge fulfilled">42</span></td>
+                            <td><span class="quantity-badge delivered">40</span></td>
+                            <td class="amount-cell">₹35</td>
+                            <td class="tat-days">3.2 days</td>
+                            <td class="success-rate success-high">88.9%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Zepto</td>
+                            <td class="customer-location">Zepto Medak Hub</td>
+                            <td class="warehouse-name">iStore Direct Trading</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Maggi 2-Minute Noodles</span>
+                                    <span class="sku-code">SKU-MAG-70</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">120</span></td>
+                            <td><span class="quantity-badge fulfilled">115</span></td>
+                            <td><span class="quantity-badge delivered">112</span></td>
+                            <td class="amount-cell">₹14</td>
+                            <td class="tat-days">1.8 days</td>
+                            <td class="success-rate success-high">93.3%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">DMart</td>
+                            <td class="customer-location">DMart Chennai T.Nagar</td>
+                            <td class="warehouse-name">SMS Marketing Chennai</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Tata Tea Premium 1kg</span>
+                                    <span class="sku-code">SKU-TTP-1000</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">25</span></td>
+                            <td><span class="quantity-badge fulfilled">22</span></td>
+                            <td><span class="quantity-badge delivered">20</span></td>
+                            <td class="amount-cell">₹380</td>
+                            <td class="tat-days">4.5 days</td>
+                            <td class="success-rate success-medium">80.0%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Blinkit</td>
+                            <td class="customer-location">Blinkit Gurgaon Central</td>
+                            <td class="warehouse-name">Ashish Marketing Delhi</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Amul Butter 500g</span>
+                                    <span class="sku-code">SKU-AMB-500</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">60</span></td>
+                            <td><span class="quantity-badge fulfilled">58</span></td>
+                            <td><span class="quantity-badge delivered">55</span></td>
+                            <td class="amount-cell">₹240</td>
+                            <td class="tat-days">2.1 days</td>
+                            <td class="success-rate success-high">91.7%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Swiggy Instamart</td>
+                            <td class="customer-location">Swiggy Hub Mumbai</td>
+                            <td class="warehouse-name">Scootsy Logistics</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Parle-G Biscuits 200g</span>
+                                    <span class="sku-code">SKU-PRG-200</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">80</span></td>
+                            <td><span class="quantity-badge fulfilled">75</span></td>
+                            <td><span class="quantity-badge delivered">72</span></td>
+                            <td class="amount-cell">₹25</td>
+                            <td class="tat-days">3.8 days</td>
+                            <td class="success-rate success-high">90.0%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Walmart</td>
+                            <td class="customer-location">Walmart Amritsar</td>
+                            <td class="warehouse-name">Sawhney Agencies</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Surf Excel Powder 1kg</span>
+                                    <span class="sku-code">SKU-SEP-1000</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">35</span></td>
+                            <td><span class="quantity-badge fulfilled">32</span></td>
+                            <td><span class="quantity-badge delivered">30</span></td>
+                            <td class="amount-cell">₹180</td>
+                            <td class="tat-days">3.5 days</td>
+                            <td class="success-rate success-high">85.7%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">BigBasket</td>
+                            <td class="customer-location">BigBasket Hyderabad</td>
+                            <td class="warehouse-name">Sakshi Agency Pune</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Dove Soap 125g</span>
+                                    <span class="sku-code">SKU-DVS-125</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">50</span></td>
+                            <td><span class="quantity-badge fulfilled">45</span></td>
+                            <td><span class="quantity-badge delivered">42</span></td>
+                            <td class="amount-cell">₹65</td>
+                            <td class="tat-days">4.2 days</td>
+                            <td class="success-rate success-medium">84.0%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">DMart</td>
+                            <td class="customer-location">DMart Bangalore Koramangala</td>
+                            <td class="warehouse-name">SMS Marketing Chennai</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Fortune Sunflower Oil 1L</span>
+                                    <span class="sku-code">SKU-FSO-1000</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹4,800</span></td>
+                            <td><span class="amount-badge fulfilled">₹4,560</span></td>
+                            <td><span class="amount-badge delivered">₹4,320</span></td>
+                            <td class="amount-cell">₹120</td>
+                            <td class="tat-days">5.1 days</td>
+                            <td class="success-rate success-high">90.0%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Zepto</td>
+                            <td class="customer-location">Zepto Delhi Rohini</td>
+                            <td class="warehouse-name">Ashish Marketing Delhi</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Colgate Toothpaste 200g</span>
+                                    <span class="sku-code">SKU-CLG-200</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹6,375</span></td>
+                            <td><span class="amount-badge fulfilled">₹5,950</span></td>
+                            <td><span class="amount-badge delivered">₹5,780</span></td>
+                            <td class="amount-cell">₹85</td>
+                            <td class="tat-days">2.3 days</td>
+                            <td class="success-rate success-high">90.7%</td>
+                        </tr>
+                        <tr class="summary-row">
+                            <td colspan="4"><strong>TOTAL SUMMARY</strong></td>
+                            <td><span class="amount-badge ordered">₹51,230</span></td>
+                            <td><span class="amount-badge fulfilled">₹47,645</span></td>
+                            <td><span class="amount-badge delivered">₹44,968</span></td>
+                            <td class="amount-cell"><strong>Avg: ₹139</strong></td>
+                            <td class="tat-days"><strong>3.2 days</strong></td>
+                            <td class="success-rate success-high"><strong>89.5%</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        const tabs = document.querySelectorAll('.toggle-tab');
+        const contents = document.querySelectorAll('.view-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and contents
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                const targetView = tab.getAttribute('data-view');
+                document.getElementById(targetView).classList.add('active');
+            });
+        });
+
+        // Search functionality
+        const searchBox = document.querySelector('.search-box');
+        searchBox.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const tables = document.querySelectorAll('table tbody');
+            
+            tables.forEach(table => {
+                const rows = table.querySelectorAll('tr:not(.summary-row)');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Dynamic metrics update based on visible rows
+        function updateMetrics() {
+            const activeView = document.querySelector('.view-content.active');
+            const visibleRows = activeView.querySelectorAll('tbody tr:not(.summary-row):not([style*="display: none"])');
+            
+            let totalOrdered = 0;
+            let totalFulfilled = 0;
+            let totalDelivered = 0;
+            let totalTAT = 0;
+            let validRows = 0;
+
+            visibleRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length > 5) {
+                    // Extract numbers from quantity or amount badges
+                    const orderedText = cells[4].textContent.replace(/[₹,]/g, '');
+                    const fulfilledText = cells[5].textContent.replace(/[₹,]/g, '');
+                    const deliveredText = cells[6].textContent.replace(/[₹,]/g, '');
+                    const tatText = cells[8].textContent.replace(' days', '');
+
+                    totalOrdered += parseInt(orderedText) || 0;
+                    totalFulfilled += parseInt(fulfilledText) || 0;
+                    totalDelivered += parseInt(deliveredText) || 0;
+                    totalTAT += parseFloat(tatText) || 0;
+                    validRows++;
+                }
+            });
+
+            // Update summary row
+            const summaryRow = activeView.querySelector('.summary-row');
+            if (summaryRow && validRows > 0) {
+                const isAmountView = activeView.id === 'amount';
+                const prefix = isAmountView ? '₹' : '';
+                const suffix = isAmountView ? '' : '';
+                
+                summaryRow.cells[4].innerHTML = `<span class="${isAmountView ? 'amount' : 'quantity'}-badge ordered">${prefix}${totalOrdered.toLocaleString()}${suffix}</span>`;
+                summaryRow.cells[5].innerHTML = `<span class="${isAmountView ? 'amount' : 'quantity'}-badge fulfilled">${prefix}${totalFulfilled.toLocaleString()}${suffix}</span>`;
+                summaryRow.cells[6].innerHTML = `<span class="${isAmountView ? 'amount' : 'quantity'}-badge delivered">${prefix}${totalDelivered.toLocaleString()}${suffix}</span>`;
+                summaryRow.cells[8].innerHTML = `<strong>${(totalTAT / validRows).toFixed(1)} days</strong>`;
+                summaryRow.cells[9].innerHTML = `<strong class="success-rate success-high">${((totalDelivered / totalOrdered) * 100).toFixed(1)}%</strong>`;
+            }
+        }
+
+        // Update metrics when search is performed
+        searchBox.addEventListener('input', () => {
+            setTimeout(updateMetrics, 100);
+        });
+
+        // Update metrics when view is switched
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                setTimeout(updateMetrics, 100);
+            });
+        });
+
+        // Initial metrics update
+        updateMetrics();
+    </script>
+</body>
+</html>
+                                    <span class="sku-code">SKU-FSO-1000</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">40</span></td>
+                            <td><span class="quantity-badge fulfilled">38</span></td>
+                            <td><span class="quantity-badge delivered">36</span></td>
+                            <td class="amount-cell">₹120</td>
+                            <td class="tat-days">5.1 days</td>
+                            <td class="success-rate success-high">90.0%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Zepto</td>
+                            <td class="customer-location">Zepto Delhi Rohini</td>
+                            <td class="warehouse-name">Ashish Marketing Delhi</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Colgate Toothpaste 200g</span>
+                                    <span class="sku-code">SKU-CLG-200</span>
+                                </div>
+                            </td>
+                            <td><span class="quantity-badge ordered">75</span></td>
+                            <td><span class="quantity-badge fulfilled">70</span></td>
+                            <td><span class="quantity-badge delivered">68</span></td>
+                            <td class="amount-cell">₹85</td>
+                            <td class="tat-days">2.3 days</td>
+                            <td class="success-rate success-high">90.7%</td>
+                        </tr>
+                        <tr class="summary-row">
+                            <td colspan="4"><strong>TOTAL SUMMARY</strong></td>
+                            <td><span class="quantity-badge ordered">560</span></td>
+                            <td><span class="quantity-badge fulfilled">524</span></td>
+                            <td><span class="quantity-badge delivered">501</span></td>
+                            <td class="amount-cell"><strong>Avg: ₹139</strong></td>
+                            <td class="tat-days"><strong>3.2 days</strong></td>
+                            <td class="success-rate success-high"><strong>89.5%</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="amount" class="view-content">
+        <div class="data-table">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Customer Location</th>
+                            <th>Warehouse</th>
+                            <th>SKU Details</th>
+                            <th>Ordered Amount</th>
+                            <th>Fulfilled Amount</th>
+                            <th>Delivered Amount</th>
+                            <th>Unit Price</th>
+                            <th>Avg TAT</th>
+                            <th>Success Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="account-name">Walmart</td>
+                            <td class="customer-location">Walmart Jalandhar</td>
+                            <td class="warehouse-name">Ashish Marketing</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Cadbury Dairy Milk 100g</span>
+                                    <span class="sku-code">SKU-CDM-100</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹1,350</span></td>
+                            <td><span class="amount-badge fulfilled">₹1,215</span></td>
+                            <td><span class="amount-badge delivered">₹1,170</span></td>
+                            <td class="amount-cell">₹45</td>
+                            <td class="tat-days">2.5 days</td>
+                            <td class="success-rate success-high">86.7%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">BigBasket</td>
+                            <td class="customer-location">BigBasket Pune Central</td>
+                            <td class="warehouse-name">Sakshi Agency - Pune</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Britannia Good Day Cookies</span>
+                                    <span class="sku-code">SKU-BGD-200</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹1,575</span></td>
+                            <td><span class="amount-badge fulfilled">₹1,470</span></td>
+                            <td><span class="amount-badge delivered">₹1,400</span></td>
+                            <td class="amount-cell">₹35</td>
+                            <td class="tat-days">3.2 days</td>
+                            <td class="success-rate success-high">88.9%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Zepto</td>
+                            <td class="customer-location">Zepto Medak Hub</td>
+                            <td class="warehouse-name">iStore Direct Trading</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Maggi 2-Minute Noodles</span>
+                                    <span class="sku-code">SKU-MAG-70</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹1,680</span></td>
+                            <td><span class="amount-badge fulfilled">₹1,610</span></td>
+                            <td><span class="amount-badge delivered">₹1,568</span></td>
+                            <td class="amount-cell">₹14</td>
+                            <td class="tat-days">1.8 days</td>
+                            <td class="success-rate success-high">93.3%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">DMart</td>
+                            <td class="customer-location">DMart Chennai T.Nagar</td>
+                            <td class="warehouse-name">SMS Marketing Chennai</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Tata Tea Premium 1kg</span>
+                                    <span class="sku-code">SKU-TTP-1000</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹9,500</span></td>
+                            <td><span class="amount-badge fulfilled">₹8,360</span></td>
+                            <td><span class="amount-badge delivered">₹7,600</span></td>
+                            <td class="amount-cell">₹380</td>
+                            <td class="tat-days">4.5 days</td>
+                            <td class="success-rate success-medium">80.0%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Blinkit</td>
+                            <td class="customer-location">Blinkit Gurgaon Central</td>
+                            <td class="warehouse-name">Ashish Marketing Delhi</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Amul Butter 500g</span>
+                                    <span class="sku-code">SKU-AMB-500</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹14,400</span></td>
+                            <td><span class="amount-badge fulfilled">₹13,920</span></td>
+                            <td><span class="amount-badge delivered">₹13,200</span></td>
+                            <td class="amount-cell">₹240</td>
+                            <td class="tat-days">2.1 days</td>
+                            <td class="success-rate success-high">91.7%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Swiggy Instamart</td>
+                            <td class="customer-location">Swiggy Hub Mumbai</td>
+                            <td class="warehouse-name">Scootsy Logistics</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Parle-G Biscuits 200g</span>
+                                    <span class="sku-code">SKU-PRG-200</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹2,000</span></td>
+                            <td><span class="amount-badge fulfilled">₹1,875</span></td>
+                            <td><span class="amount-badge delivered">₹1,800</span></td>
+                            <td class="amount-cell">₹25</td>
+                            <td class="tat-days">3.8 days</td>
+                            <td class="success-rate success-high">90.0%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">Walmart</td>
+                            <td class="customer-location">Walmart Amritsar</td>
+                            <td class="warehouse-name">Sawhney Agencies</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Surf Excel Powder 1kg</span>
+                                    <span class="sku-code">SKU-SEP-1000</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹6,300</span></td>
+                            <td><span class="amount-badge fulfilled">₹5,760</span></td>
+                            <td><span class="amount-badge delivered">₹5,400</span></td>
+                            <td class="amount-cell">₹180</td>
+                            <td class="tat-days">3.5 days</td>
+                            <td class="success-rate success-high">85.7%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">BigBasket</td>
+                            <td class="customer-location">BigBasket Hyderabad</td>
+                            <td class="warehouse-name">Sakshi Agency Pune</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Dove Soap 125g</span>
+                                    <span class="sku-code">SKU-DVS-125</span>
+                                </div>
+                            </td>
+                            <td><span class="amount-badge ordered">₹3,250</span></td>
+                            <td><span class="amount-badge fulfilled">₹2,925</span></td>
+                            <td><span class="amount-badge delivered">₹2,730</span></td>
+                            <td class="amount-cell">₹65</td>
+                            <td class="tat-days">4.2 days</td>
+                            <td class="success-rate success-medium">84.0%</td>
+                        </tr>
+                        <tr>
+                            <td class="account-name">DMart</td>
+                            <td class="customer-location">DMart Bangalore Koramangala</td>
+                            <td class="warehouse-name">SMS Marketing Chennai</td>
+                            <td>
+                                <div class="sku-info">
+                                    <span class="sku-name">Fortune Sunflower Oil 1L</span>
+                                    
